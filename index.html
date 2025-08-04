@@ -53,7 +53,7 @@
     }
 
     button {
-      margin: 10px 5px;
+      margin-top: 10px;
       padding: 8px 16px;
       background: #ff3333;
       border: none;
@@ -67,9 +67,6 @@
 <body>
   <h1>🐍 Snake Game - Made by Anup</h1>
   <div id="scoreDisplay">Score: 0</div>
-  <div>
-    <button onclick="togglePause()"><span id="pauseLabel">Pause</span></button>
-  </div>
   <canvas id="game" width="400" height="400"></canvas>
 
   <div id="overlay">
@@ -84,13 +81,11 @@
     const scoreDisplay = document.getElementById('scoreDisplay');
     const overlay = document.getElementById('overlay');
     const finalScoreText = document.getElementById('finalScore');
-    const pauseLabel = document.getElementById('pauseLabel');
 
     let gridSize = 20;
     let tileCount = canvas.width / gridSize;
     let snake, direction, nextDirection, food, score, lastTime;
-    let paused = false;
-    const speed = 130; // Slower than before
+    const speed = 130;
 
     function initGame() {
       snake = [{ x: 10, y: 10 }];
@@ -103,13 +98,7 @@
       overlay.style.display = 'none';
     }
 
-    function togglePause() {
-      paused = !paused;
-      pauseLabel.innerText = paused ? 'Resume' : 'Pause';
-    }
-
     document.addEventListener('keydown', e => {
-      if (e.key === ' ') togglePause();
       switch (e.key) {
         case 'ArrowUp': case 'w':
           if (direction.y === 0) nextDirection = { x: 0, y: -1 };
@@ -126,6 +115,7 @@
       }
     });
 
+    // Touch controls
     let startX = 0, startY = 0;
     canvas.addEventListener('touchstart', e => {
       const t = e.touches[0];
@@ -194,7 +184,7 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Snake
-      snake.forEach((part, i) => {
+      snake.forEach((part) => {
         const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
         gradient.addColorStop(0, "#ff6666");
         gradient.addColorStop(1, "#cc0000");
@@ -218,7 +208,7 @@
     }
 
     function loop(timestamp) {
-      if (overlay.style.display === 'block' || paused) return;
+      if (overlay.style.display === 'block') return;
       if (timestamp - lastTime > speed) {
         update();
         draw();
