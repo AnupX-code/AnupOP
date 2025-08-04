@@ -137,6 +137,7 @@
     let tileCount = canvas.width / gridSize;
     let snake, direction, nextDirection, food, score, highScore = 0, lastTime, speed;
     let gameStarted = false;
+    let isPaused = false;
     let currentTheme = "neon";
 
     function initGame() {
@@ -164,10 +165,13 @@
     }
 
     function gameOver() {
+      isPaused = true;
       if (score > highScore) highScore = score;
       finalScoreText.textContent = `Score: ${score} 🐍`;
       overlay.style.display = 'block';
-      triggerConfetti();
+      triggerConfetti(() => {
+        isPaused = false;
+      });
     }
 
     function restart() {
@@ -192,7 +196,7 @@
       }
     });
 
-    // Touch Controls
+    // Better touch controls
     let startX = 0, startY = 0;
     canvas.addEventListener('touchstart', e => {
       const t = e.touches[0];
@@ -204,11 +208,11 @@
       const dx = e.changedTouches[0].clientX - startX;
       const dy = e.changedTouches[0].clientY - startY;
       if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 0 && direction.x === 0) nextDirection = { x: 1, y: 0 };
-        else if (dx < 0 && direction.x === 0) nextDirection = { x: -1, y: 0 };
+        if (dx > 10 && direction.x === 0) nextDirection = { x: 1, y: 0 };
+        else if (dx < -10 && direction.x === 0) nextDirection = { x: -1, y: 0 };
       } else {
-        if (dy > 0 && direction.y === 0) nextDirection = { x: 0, y: 1 };
-        else if (dy < 0 && direction.y === 0) nextDirection = { x: 0, y: -1 };
+        if (dy > 10 && direction.y === 0) nextDirection = { x: 0, y: 1 };
+        else if (dy < -10 && direction.y === 0) nextDirection = { x: 0, y: -1 };
       }
     });
 
@@ -250,7 +254,6 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw snake
       snake.forEach(part => {
         ctx.fillStyle = getSnakeColor();
         ctx.beginPath();
@@ -258,7 +261,6 @@
         ctx.fill();
       });
 
-      // Draw food
       ctx.fillStyle = getFoodColor();
       ctx.beginPath();
       ctx.arc(food.x * gridSize + gridSize / 2, food.y * gridSize + gridSize / 2, gridSize / 2.5, 0, Math.PI * 2);
@@ -294,7 +296,7 @@
     }
 
     function loop(timestamp) {
-      if (!gameStarted || overlay.style.display === 'block') return;
+      if (!gameStarted || overlay.style.display === 'block' || isPaused) return;
       if (timestamp - lastTime > speed) {
         update();
         draw();
@@ -320,9 +322,9 @@
       this.fill();
     };
 
-    // Confetti animation
-    function triggerConfetti() {
-      for (let i = 0; i < 30; i++) {
+    function triggerConfetti(done) {
+      let confettiLeft = 40;
+      for (let i = 0; i < confettiLeft; i++) {
         const conf = document.createElement("div");
         conf.style.position = "absolute";
         conf.style.width = "6px";
@@ -338,10 +340,12 @@
         const fall = () => {
           let top = parseFloat(conf.style.top);
           if (top < window.innerHeight) {
-            conf.style.top = `${top + 3}px`;
+            conf.style.top = `${top + 6}px`;
             requestAnimationFrame(fall);
           } else {
             conf.remove();
+            confettiLeft--;
+            if (confettiLeft === 0 && typeof done === 'function') done();
           }
         };
         fall();
