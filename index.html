@@ -8,7 +8,7 @@
     html, body {
       margin: 0;
       padding: 0;
-      background: #0d0d0d;
+      background: #1a0000;
       font-family: 'Segoe UI', sans-serif;
       color: white;
       height: 100%;
@@ -19,10 +19,10 @@
     }
 
     h1 {
-      color: #00ff88;
+      color: #ff3333;
       margin: 10px;
       font-size: 26px;
-      text-shadow: 0 0 5px #00ff88;
+      text-shadow: 0 0 5px #ff3333;
     }
 
     #scoreDisplay {
@@ -31,8 +31,8 @@
     }
 
     canvas {
-      background: radial-gradient(#111, #000);
-      box-shadow: 0 0 20px #00ff88;
+      background: radial-gradient(#330000, #000000);
+      box-shadow: 0 0 20px #ff3333;
       border-radius: 10px;
       touch-action: none;
     }
@@ -45,19 +45,19 @@
       background: rgba(0, 0, 0, 0.85);
       color: #fff;
       padding: 30px;
-      border: 2px solid #00ff88;
+      border: 2px solid #ff3333;
       border-radius: 10px;
       text-align: center;
       display: none;
       z-index: 2;
     }
 
-    #overlay button {
-      margin-top: 10px;
+    button {
+      margin: 10px 5px;
       padding: 8px 16px;
-      background: #00ff88;
+      background: #ff3333;
       border: none;
-      color: #000;
+      color: #fff;
       font-weight: bold;
       border-radius: 6px;
       cursor: pointer;
@@ -67,7 +67,11 @@
 <body>
   <h1>🐍 Snake Game - Made by Anup</h1>
   <div id="scoreDisplay">Score: 0</div>
+  <div>
+    <button onclick="togglePause()"><span id="pauseLabel">Pause</span></button>
+  </div>
   <canvas id="game" width="400" height="400"></canvas>
+
   <div id="overlay">
     <h2>Game Over</h2>
     <p id="finalScore"></p>
@@ -80,11 +84,13 @@
     const scoreDisplay = document.getElementById('scoreDisplay');
     const overlay = document.getElementById('overlay');
     const finalScoreText = document.getElementById('finalScore');
+    const pauseLabel = document.getElementById('pauseLabel');
 
     let gridSize = 20;
     let tileCount = canvas.width / gridSize;
     let snake, direction, nextDirection, food, score, lastTime;
-    const speed = 100;
+    let paused = false;
+    const speed = 130; // Slower than before
 
     function initGame() {
       snake = [{ x: 10, y: 10 }];
@@ -97,7 +103,13 @@
       overlay.style.display = 'none';
     }
 
+    function togglePause() {
+      paused = !paused;
+      pauseLabel.innerText = paused ? 'Resume' : 'Pause';
+    }
+
     document.addEventListener('keydown', e => {
+      if (e.key === ' ') togglePause();
       switch (e.key) {
         case 'ArrowUp': case 'w':
           if (direction.y === 0) nextDirection = { x: 0, y: -1 };
@@ -114,7 +126,6 @@
       }
     });
 
-    // Touch controls for mobile
     let startX = 0, startY = 0;
     canvas.addEventListener('touchstart', e => {
       const t = e.touches[0];
@@ -182,32 +193,32 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw snake
-      ctx.fillStyle = "#00ff88";
-      snake.forEach(part => {
+      // Snake
+      snake.forEach((part, i) => {
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        gradient.addColorStop(0, "#ff6666");
+        gradient.addColorStop(1, "#cc0000");
+        ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.roundRect(part.x * gridSize, part.y * gridSize, gridSize - 1, gridSize - 1, 6);
+        ctx.roundRect(part.x * gridSize, part.y * gridSize, gridSize - 1, gridSize - 1, 5);
         ctx.fill();
       });
 
-      // Draw food
-      ctx.fillStyle = "red";
+      // Food
+      ctx.fillStyle = "yellow";
       ctx.beginPath();
       ctx.arc(food.x * gridSize + gridSize / 2, food.y * gridSize + gridSize / 2, gridSize / 2.5, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Responsive canvas (optional)
     function resizeCanvas() {
       const size = Math.min(window.innerWidth, window.innerHeight) * 0.9;
       canvas.width = canvas.height = Math.floor(size / gridSize) * gridSize;
       tileCount = canvas.width / gridSize;
     }
 
-    window.addEventListener('resize', resizeCanvas);
-
     function loop(timestamp) {
-      if (overlay.style.display === 'block') return;
+      if (overlay.style.display === 'block' || paused) return;
       if (timestamp - lastTime > speed) {
         update();
         draw();
@@ -220,7 +231,6 @@
     initGame();
     requestAnimationFrame(loop);
 
-    // Helper to draw rounded rectangles
     CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
       this.beginPath();
       this.moveTo(x + r, y);
