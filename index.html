@@ -106,7 +106,7 @@
 </head>
 <body ontouchstart="" ontouchmove="" ontouchend="">
 
-  <a class="fb-link" href="https://www.facebook.com/anupOK11" target="_blank">My Facebook 😎</a>
+ 
   <h1>🐍 Snake Game - Made by Anup</h1>
   <div id="scoreDisplay">Score: 0 | High Score: 0</div>
 
@@ -179,10 +179,31 @@
     }
 
     function gameOver() {
-      if (score > highScore) highScore = score;
-      finalScoreText.textContent = `Score: ${score} 🐍`;
-      overlay.style.display = 'block';
-    }
+  if (score > highScore) highScore = score;
+
+  const difficulty = difficultySelect.options[difficultySelect.selectedIndex].text;
+  let rank = '';
+
+  if (difficulty === 'Easy') {
+    if (score < 7) rank = 'Ultra Noob🤦‍♂️';
+    else if (score < 20) rank = 'Beginner😊';
+    else if (score < 35) rank = 'Pro😬';
+    else rank = 'Ultra Pro💀';
+  } else if (difficulty === 'Medium') {
+    if (score < 5) rank = 'Ultra Noob🤦‍♂️';
+    else if (score < 15) rank = 'Beginner😊';
+    else if (score < 30) rank = 'Pro😬';
+    else rank = 'Ultra Pro💀';
+  } else if (difficulty === 'Hard') {
+    if (score < 5) rank = 'Ultra Noob🤦‍♂️';
+    else if (score < 15) rank = 'Beginner😊';
+    else if (score < 30) rank = 'Pro😬';
+    else rank = 'Ultra Pro💀';
+  }
+
+  finalScoreText.textContent = `Score: ${score} 🐍\nRank: ${rank}`;
+  overlay.style.display = 'block';
+}
 
     function restart() {
       initGame();
