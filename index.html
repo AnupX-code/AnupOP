@@ -33,9 +33,9 @@
     canvas {
       background: radial-gradient(#330000, #000000);
       box-shadow: 0 0 20px #ff3333;
+      border: 3px solid #ff3333;
       border-radius: 10px;
       touch-action: none;
-      border: 4px solid #ff3333; /* 🔴 Visible game boundary */
     }
 
     #overlay, #startScreen {
@@ -91,26 +91,34 @@
   </style>
 </head>
 <body>
-  <a class="fb-link" href="https://www.facebook.com/anupOK11" target="_blank">My Facebook😎</a>
+  <a class="fb-link" href="https://www.facebook.com/anupOK11" target="_blank">My Facebook 😎</a>
 
   <h1>🐍 Snake Game - Made by Anup</h1>
   <div id="scoreDisplay">Score: 0 | High Score: 0</div>
   <canvas id="game" width="400" height="400"></canvas>
 
+  <!-- Start screen -->
   <div id="startScreen">
     <h2>🎮 Welcome to Snake Game!</h2>
     <p>Select Difficulty:</p>
     <select id="difficultySelect">
       <option value="180">Easy</option>
-      <option value="130" selected>Medium</option>
+      <option value="135" selected>Medium</option>
       <option value="90">Hard</option>
+    </select>
+    <p>Select Theme:</p>
+    <select id="themeSelect">
+      <option value="retro">Retro</option>
+      <option value="neon" selected>Neon</option>
+      <option value="pastel">Pastel</option>
     </select>
     <br><br>
     <button onclick="startGame()">Start Game</button>
   </div>
 
+  <!-- Game Over overlay -->
   <div id="overlay">
-    <h2>Game Over</h2>
+    <h2>🎉 Game Over</h2>
     <p id="finalScore"></p>
     <button onclick="restart()">Restart</button>
   </div>
@@ -123,11 +131,13 @@
     const finalScoreText = document.getElementById('finalScore');
     const startScreen = document.getElementById('startScreen');
     const difficultySelect = document.getElementById('difficultySelect');
+    const themeSelect = document.getElementById('themeSelect');
 
     let gridSize = 20;
     let tileCount = canvas.width / gridSize;
     let snake, direction, nextDirection, food, score, highScore = 0, lastTime, speed;
     let gameStarted = false;
+    let currentTheme = "neon";
 
     function initGame() {
       snake = [{ x: 10, y: 10 }];
@@ -146,6 +156,7 @@
 
     function startGame() {
       speed = parseInt(difficultySelect.value);
+      currentTheme = themeSelect.value;
       gameStarted = true;
       startScreen.style.display = 'none';
       initGame();
@@ -156,6 +167,7 @@
       if (score > highScore) highScore = score;
       finalScoreText.textContent = `Score: ${score} 🐍`;
       overlay.style.display = 'block';
+      triggerConfetti();
     }
 
     function restart() {
@@ -180,6 +192,8 @@
       }
     });
 
+    // Touch Controls
+    let startX = 0, startY = 0;
     canvas.addEventListener('touchstart', e => {
       const t = e.touches[0];
       startX = t.clientX;
@@ -236,20 +250,41 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      snake.forEach((part) => {
-        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-        gradient.addColorStop(0, "#ff6666");
-        gradient.addColorStop(1, "#cc0000");
-        ctx.fillStyle = gradient;
+      // Draw snake
+      snake.forEach(part => {
+        ctx.fillStyle = getSnakeColor();
         ctx.beginPath();
         ctx.roundRect(part.x * gridSize, part.y * gridSize, gridSize - 1, gridSize - 1, 5);
         ctx.fill();
       });
 
-      ctx.fillStyle = "yellow";
+      // Draw food
+      ctx.fillStyle = getFoodColor();
       ctx.beginPath();
       ctx.arc(food.x * gridSize + gridSize / 2, food.y * gridSize + gridSize / 2, gridSize / 2.5, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    function getSnakeColor() {
+      switch (currentTheme) {
+        case 'retro': return '#00FF00';
+        case 'pastel': return '#ff99cc';
+        case 'neon':
+        default:
+          const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+          g.addColorStop(0, "#ff66ff");
+          g.addColorStop(1, "#ff3333");
+          return g;
+      }
+    }
+
+    function getFoodColor() {
+      switch (currentTheme) {
+        case 'retro': return '#FFFF00';
+        case 'pastel': return '#ffeecc';
+        case 'neon':
+        default: return '#ffff00';
+      }
     }
 
     function resizeCanvas() {
@@ -284,6 +319,34 @@
       this.closePath();
       this.fill();
     };
+
+    // Confetti animation
+    function triggerConfetti() {
+      for (let i = 0; i < 30; i++) {
+        const conf = document.createElement("div");
+        conf.style.position = "absolute";
+        conf.style.width = "6px";
+        conf.style.height = "6px";
+        conf.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        conf.style.left = `${Math.random() * window.innerWidth}px`;
+        conf.style.top = `${Math.random() * window.innerHeight / 2}px`;
+        conf.style.borderRadius = "50%";
+        conf.style.zIndex = "999";
+        conf.style.opacity = "0.8";
+        conf.style.transform = `rotate(${Math.random() * 360}deg)`;
+        document.body.appendChild(conf);
+        const fall = () => {
+          let top = parseFloat(conf.style.top);
+          if (top < window.innerHeight) {
+            conf.style.top = `${top + 3}px`;
+            requestAnimationFrame(fall);
+          } else {
+            conf.remove();
+          }
+        };
+        fall();
+      }
+    }
   </script>
 </body>
 </html>
