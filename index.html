@@ -2,58 +2,65 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🐍 Snake Game - Made by Anup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Snake Game - Made by Anup</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     html, body {
       margin: 0;
       padding: 0;
+      background: #0d0d0d;
       font-family: 'Segoe UI', sans-serif;
+      color: white;
       height: 100%;
-      background: linear-gradient(135deg, #d9e4f5, #f5f5f5);
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
     }
 
     h1 {
-      margin-top: 20px;
-      color: #0c5c0c;
-      font-size: 2em;
-      text-shadow: 1px 1px 0 #aaffaa;
+      color: #00ff88;
+      margin: 10px;
+      font-size: 26px;
+      text-shadow: 0 0 5px #00ff88;
     }
 
     #scoreDisplay {
-      font-size: 1.2em;
-      margin-bottom: 10px;
-      color: #333;
+      font-size: 18px;
+      margin: 5px;
     }
 
     canvas {
-      background-color: #fff;
-      border: 3px solid #0f0;
+      background: radial-gradient(#111, #000);
+      box-shadow: 0 0 20px #00ff88;
       border-radius: 10px;
-      box-shadow: 0 0 20px #0f0;
       touch-action: none;
     }
 
-    .game-over {
+    #overlay {
       position: absolute;
       top: 50%;
-      transform: translateY(-50%);
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 20px 30px;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      padding: 30px;
+      border: 2px solid #00ff88;
       border-radius: 10px;
       text-align: center;
-      font-size: 1.5em;
       display: none;
-      box-shadow: 0 0 10px #fff;
+      z-index: 2;
+    }
+
+    #overlay button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: #00ff88;
+      border: none;
+      color: #000;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -61,24 +68,34 @@
   <h1>🐍 Snake Game - Made by Anup</h1>
   <div id="scoreDisplay">Score: 0</div>
   <canvas id="game" width="400" height="400"></canvas>
-  <div class="game-over" id="gameOverBox">Game Over!<br/>Tap to restart</div>
+  <div id="overlay">
+    <h2>Game Over</h2>
+    <p id="finalScore"></p>
+    <button onclick="restart()">Restart</button>
+  </div>
 
   <script>
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
     const scoreDisplay = document.getElementById('scoreDisplay');
-    const gameOverBox = document.getElementById('gameOverBox');
+    const overlay = document.getElementById('overlay');
+    const finalScoreText = document.getElementById('finalScore');
 
-    const gridSize = 20;
-    const tileCount = canvas.width / gridSize;
-
-    let snake = [{ x: 10, y: 10 }];
-    let direction = { x: 1, y: 0 };
-    let nextDirection = { x: 1, y: 0 };
-    let food = randomFood();
-    let score = 0;
-    let lastTime = 0;
+    let gridSize = 20;
+    let tileCount = canvas.width / gridSize;
+    let snake, direction, nextDirection, food, score, lastTime;
     const speed = 100;
+
+    function initGame() {
+      snake = [{ x: 10, y: 10 }];
+      direction = { x: 1, y: 0 };
+      nextDirection = { x: 1, y: 0 };
+      food = randomFood();
+      score = 0;
+      scoreDisplay.innerText = "Score: 0";
+      lastTime = 0;
+      overlay.style.display = 'none';
+    }
 
     document.addEventListener('keydown', e => {
       switch (e.key) {
@@ -97,13 +114,14 @@
       }
     });
 
-    // Touch control
-    let startX, startY;
+    // Touch controls for mobile
+    let startX = 0, startY = 0;
     canvas.addEventListener('touchstart', e => {
-      const touch = e.touches[0];
-      startX = touch.clientX;
-      startY = touch.clientY;
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
     });
+
     canvas.addEventListener('touchend', e => {
       const dx = e.changedTouches[0].clientX - startX;
       const dy = e.changedTouches[0].clientY - startY;
@@ -128,27 +146,19 @@
     }
 
     function gameOver() {
-      gameOverBox.style.display = 'block';
-      gameOverBox.onclick = () => {
-        gameOverBox.style.display = 'none';
-        resetGame();
-      };
+      finalScoreText.textContent = "Score: " + score + " 🐍";
+      overlay.style.display = 'block';
     }
 
-    function resetGame() {
-      snake = [{ x: 10, y: 10 }];
-      direction = { x: 1, y: 0 };
-      nextDirection = { x: 1, y: 0 };
-      food = randomFood();
-      score = 0;
-      scoreDisplay.innerText = "Score: 0";
+    function restart() {
+      initGame();
+      requestAnimationFrame(loop);
     }
 
     function update() {
       direction = nextDirection;
       const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
 
-      // Collision check
       if (
         head.x < 0 || head.x >= tileCount ||
         head.y < 0 || head.y >= tileCount ||
@@ -170,51 +180,34 @@
     }
 
     function draw() {
-      // Clear
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw grid lines
-      ctx.strokeStyle = "#eee";
-      for (let i = 0; i < tileCount; i++) {
+      // Draw snake
+      ctx.fillStyle = "#00ff88";
+      snake.forEach(part => {
         ctx.beginPath();
-        ctx.moveTo(i * gridSize, 0);
-        ctx.lineTo(i * gridSize, canvas.height);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(0, i * gridSize);
-        ctx.lineTo(canvas.width, i * gridSize);
-        ctx.stroke();
-      }
+        ctx.roundRect(part.x * gridSize, part.y * gridSize, gridSize - 1, gridSize - 1, 6);
+        ctx.fill();
+      });
 
       // Draw food
       ctx.fillStyle = "red";
       ctx.beginPath();
-      ctx.arc(
-        food.x * gridSize + gridSize / 2,
-        food.y * gridSize + gridSize / 2,
-        gridSize / 2.5,
-        0,
-        Math.PI * 2
-      );
+      ctx.arc(food.x * gridSize + gridSize / 2, food.y * gridSize + gridSize / 2, gridSize / 2.5, 0, Math.PI * 2);
       ctx.fill();
-
-      // Draw snake
-      ctx.fillStyle = "#00cc00";
-      snake.forEach((s, i) => {
-        ctx.beginPath();
-        ctx.arc(
-          s.x * gridSize + gridSize / 2,
-          s.y * gridSize + gridSize / 2,
-          gridSize / 2.2,
-          0,
-          Math.PI * 2
-        );
-        ctx.fill();
-      });
     }
 
+    // Responsive canvas (optional)
+    function resizeCanvas() {
+      const size = Math.min(window.innerWidth, window.innerHeight) * 0.9;
+      canvas.width = canvas.height = Math.floor(size / gridSize) * gridSize;
+      tileCount = canvas.width / gridSize;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
     function loop(timestamp) {
+      if (overlay.style.display === 'block') return;
       if (timestamp - lastTime > speed) {
         update();
         draw();
@@ -223,7 +216,25 @@
       requestAnimationFrame(loop);
     }
 
+    resizeCanvas();
+    initGame();
     requestAnimationFrame(loop);
+
+    // Helper to draw rounded rectangles
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      this.beginPath();
+      this.moveTo(x + r, y);
+      this.lineTo(x + w - r, y);
+      this.quadraticCurveTo(x + w, y, x + w, y + r);
+      this.lineTo(x + w, y + h - r);
+      this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      this.lineTo(x + r, y + h);
+      this.quadraticCurveTo(x, y + h, x, y + h - r);
+      this.lineTo(x, y + r);
+      this.quadraticCurveTo(x, y, x + r, y);
+      this.closePath();
+      this.fill();
+    };
   </script>
 </body>
 </html>
