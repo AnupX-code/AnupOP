@@ -17,7 +17,7 @@ _Made with ❤️ by Anup Raj Thapaliya_
 - ⚡ Power-ups and animated background  
 - 📱 Mobile-first design  
 - 🧠 Rank titles based on score and difficulty  
-- 🔗 [Facebook](https://www.facebook.com/anupOK11) link in-game  
+- 🔗 [My Facebook](https://www.facebook.com/anupOK11) link in-game  
 - 🟥 Red game border + polished UI  
 
 ---
