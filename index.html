@@ -16,13 +16,15 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      touch-action: none;
     }
 
     h1 {
       color: #ff3333;
-      margin: 10px;
-      font-size: 28px;
+      font-size: 24px;
+      margin-top: 55px;
       text-shadow: 0 0 6px #ff3333;
+      text-align: center;
     }
 
     #scoreDisplay {
@@ -36,7 +38,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      touch-action: none;
     }
 
     canvas {
@@ -80,8 +81,8 @@
 
     .fb-link {
       position: absolute;
-      right: 10px;
       top: 10px;
+      left: 10px;
       background: #3b5998;
       color: white;
       padding: 8px 12px;
@@ -101,17 +102,16 @@
     }
   </style>
 </head>
-<body>
+<body ontouchstart="" ontouchmove="" ontouchend="">
   <a class="fb-link" href="https://www.facebook.com/anupOK11" target="_blank">My Facebook 😎</a>
-
   <h1>🐍 Snake Game - Made by Anup</h1>
+
   <div id="scoreDisplay">Score: 0 | High Score: 0</div>
 
   <div id="canvasContainer">
     <canvas id="game" width="420" height="420"></canvas>
   </div>
 
-  <!-- Start screen -->
   <div id="startScreen">
     <h2>🎮 Welcome to Snake Game!</h2>
     <p>Select Difficulty:</p>
@@ -130,7 +130,6 @@
     <button onclick="startGame()">Start Game</button>
   </div>
 
-  <!-- Game Over overlay -->
   <div id="overlay">
     <h2>🎉 Game Over</h2>
     <p id="finalScore"></p>
@@ -146,13 +145,11 @@
     const startScreen = document.getElementById('startScreen');
     const difficultySelect = document.getElementById('difficultySelect');
     const themeSelect = document.getElementById('themeSelect');
-    const container = document.getElementById('canvasContainer');
 
     let gridSize = 20;
     let tileCount = canvas.width / gridSize;
     let snake, direction, nextDirection, food, score, highScore = 0, lastTime, speed;
     let gameStarted = false;
-    let isPaused = false;
     let currentTheme = "neon";
 
     function initGame() {
@@ -180,11 +177,9 @@
     }
 
     function gameOver() {
-      isPaused = true;
       if (score > highScore) highScore = score;
       finalScoreText.textContent = `Score: ${score} 🐍`;
       overlay.style.display = 'block';
-      isPaused = false;
     }
 
     function restart() {
@@ -194,30 +189,22 @@
 
     document.addEventListener('keydown', e => {
       switch (e.key) {
-        case 'ArrowUp': case 'w':
-          if (direction.y === 0) nextDirection = { x: 0, y: -1 };
-          break;
-        case 'ArrowDown': case 's':
-          if (direction.y === 0) nextDirection = { x: 0, y: 1 };
-          break;
-        case 'ArrowLeft': case 'a':
-          if (direction.x === 0) nextDirection = { x: -1, y: 0 };
-          break;
-        case 'ArrowRight': case 'd':
-          if (direction.x === 0) nextDirection = { x: 1, y: 0 };
-          break;
+        case 'ArrowUp': case 'w': if (direction.y === 0) nextDirection = { x: 0, y: -1 }; break;
+        case 'ArrowDown': case 's': if (direction.y === 0) nextDirection = { x: 0, y: 1 }; break;
+        case 'ArrowLeft': case 'a': if (direction.x === 0) nextDirection = { x: -1, y: 0 }; break;
+        case 'ArrowRight': case 'd': if (direction.x === 0) nextDirection = { x: 1, y: 0 }; break;
       }
     });
 
-    // Touch Controls (over container)
+    // Touch controls for whole screen
     let startX = 0, startY = 0;
-    container.addEventListener('touchstart', e => {
+    document.addEventListener('touchstart', e => {
       const t = e.touches[0];
       startX = t.clientX;
       startY = t.clientY;
     });
 
-    container.addEventListener('touchend', e => {
+    document.addEventListener('touchend', e => {
       const dx = e.changedTouches[0].clientX - startX;
       const dy = e.changedTouches[0].clientY - startY;
       if (Math.abs(dx) > Math.abs(dy)) {
@@ -309,7 +296,7 @@
     }
 
     function loop(timestamp) {
-      if (!gameStarted || overlay.style.display === 'block' || isPaused) return;
+      if (!gameStarted || overlay.style.display === 'block') return;
       if (timestamp - lastTime > speed) {
         update();
         draw();
