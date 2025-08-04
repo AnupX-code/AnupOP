@@ -33,8 +33,8 @@
     }
 
     #canvasContainer {
-      width: 95vmin;
-      height: 95vmin;
+      width: 400px;
+      height: 400px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -109,7 +109,7 @@
   <div id="scoreDisplay">Score: 0 | High Score: 0</div>
 
   <div id="canvasContainer">
-    <canvas id="game" width="420" height="420"></canvas>
+    <canvas id="game" width="400" height="400"></canvas>
   </div>
 
   <div id="startScreen">
@@ -289,8 +289,7 @@
     }
 
     function resizeCanvas() {
-      const size = Math.min(window.innerWidth, window.innerHeight) * 0.95;
-      canvas.width = canvas.height = Math.floor(size / gridSize) * gridSize;
+      canvas.width = canvas.height = 400;
       tileCount = canvas.width / gridSize;
     }
 
