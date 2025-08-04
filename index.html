@@ -169,9 +169,7 @@
       if (score > highScore) highScore = score;
       finalScoreText.textContent = `Score: ${score} 🐍`;
       overlay.style.display = 'block';
-      triggerConfetti(() => {
-        isPaused = false;
-      });
+      isPaused = false;
     }
 
     function restart() {
@@ -196,7 +194,7 @@
       }
     });
 
-    // Better touch controls
+    // Touch controls
     let startX = 0, startY = 0;
     canvas.addEventListener('touchstart', e => {
       const t = e.touches[0];
@@ -321,36 +319,6 @@
       this.closePath();
       this.fill();
     };
-
-    function triggerConfetti(done) {
-      let confettiLeft = 40;
-      for (let i = 0; i < confettiLeft; i++) {
-        const conf = document.createElement("div");
-        conf.style.position = "absolute";
-        conf.style.width = "6px";
-        conf.style.height = "6px";
-        conf.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
-        conf.style.left = `${Math.random() * window.innerWidth}px`;
-        conf.style.top = `${Math.random() * window.innerHeight / 2}px`;
-        conf.style.borderRadius = "50%";
-        conf.style.zIndex = "999";
-        conf.style.opacity = "0.8";
-        conf.style.transform = `rotate(${Math.random() * 360}deg)`;
-        document.body.appendChild(conf);
-        const fall = () => {
-          let top = parseFloat(conf.style.top);
-          if (top < window.innerHeight) {
-            conf.style.top = `${top + 6}px`;
-            requestAnimationFrame(fall);
-          } else {
-            conf.remove();
-            confettiLeft--;
-            if (confettiLeft === 0 && typeof done === 'function') done();
-          }
-        };
-        fall();
-      }
-    }
   </script>
 </body>
 </html>
