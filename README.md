@@ -1,2 +1,2 @@
-# Made By Anup Raj Thapaliya
+# Made By Anup Raj Thapaliya, Basic Snake Game Model
 Enjoy!!
