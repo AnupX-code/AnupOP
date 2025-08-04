@@ -62,17 +62,23 @@
       border-radius: 6px;
       cursor: pointer;
     }
+
+    #fbBtn {
+      margin-top: 12px;
+      background: #4267B2;
+    }
   </style>
 </head>
 <body>
   <h1>🐍 Snake Game - Made by Anup</h1>
-  <div id="scoreDisplay">Score: 0</div>
+  <div id="scoreDisplay">Score: 0 | High Score: 0</div>
   <canvas id="game" width="400" height="400"></canvas>
 
   <div id="overlay">
     <h2>Game Over</h2>
     <p id="finalScore"></p>
-    <button onclick="restart()">Restart</button>
+    <button onclick="restart()">Restart</button><br>
+    <button id="fbBtn" onclick="window.open('https://www.facebook.com/anupOK11', '_blank')">Owner's Facebook</button>
   </div>
 
   <script>
@@ -85,7 +91,8 @@
     let gridSize = 20;
     let tileCount = canvas.width / gridSize;
     let snake, direction, nextDirection, food, score, lastTime;
-    const speed = 140;
+    let highScore = localStorage.getItem('highScore') || 0;
+    const speed = 160; // make slower here
 
     function initGame() {
       snake = [{ x: 10, y: 10 }];
@@ -93,9 +100,13 @@
       nextDirection = { x: 1, y: 0 };
       food = randomFood();
       score = 0;
-      scoreDisplay.innerText = "Score: 0";
+      updateScore();
       lastTime = 0;
       overlay.style.display = 'none';
+    }
+
+    function updateScore() {
+      scoreDisplay.innerText = `Score: ${score} | High Score: ${highScore}`;
     }
 
     document.addEventListener('keydown', e => {
@@ -115,7 +126,6 @@
       }
     });
 
-    // Touch controls
     let startX = 0, startY = 0;
     canvas.addEventListener('touchstart', e => {
       const t = e.touches[0];
@@ -147,6 +157,10 @@
     }
 
     function gameOver() {
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+      }
       finalScoreText.textContent = "Score: " + score + " 🐍";
       overlay.style.display = 'block';
     }
@@ -173,7 +187,7 @@
 
       if (head.x === food.x && head.y === food.y) {
         score++;
-        scoreDisplay.innerText = "Score: " + score;
+        updateScore();
         food = randomFood();
       } else {
         snake.pop();
@@ -183,7 +197,6 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Snake
       snake.forEach((part) => {
         const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
         gradient.addColorStop(0, "#ff6666");
@@ -194,7 +207,6 @@
         ctx.fill();
       });
 
-      // Food
       ctx.fillStyle = "yellow";
       ctx.beginPath();
       ctx.arc(food.x * gridSize + gridSize / 2, food.y * gridSize + gridSize / 2, gridSize / 2.5, 0, Math.PI * 2);
@@ -238,4 +250,3 @@
   </script>
 </body>
 </html>
-
