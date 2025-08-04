@@ -30,6 +30,13 @@
       margin: 5px;
     }
 
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
     canvas {
       background: radial-gradient(#330000, #000000);
       box-shadow: 0 0 20px #ff3333;
@@ -63,22 +70,41 @@
       cursor: pointer;
     }
 
-    #fbBtn {
-      margin-top: 12px;
-      background: #4267B2;
+    #facebookBtn {
+      margin-top: 10px;
+      padding: 8px 14px;
+      background-color: #3b5998;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    #sidePanel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: start;
     }
   </style>
 </head>
 <body>
   <h1>🐍 Snake Game - Made by Anup</h1>
   <div id="scoreDisplay">Score: 0 | High Score: 0</div>
-  <canvas id="game" width="400" height="400"></canvas>
+  <div class="container">
+    <canvas id="game" width="400" height="400"></canvas>
+    <div id="sidePanel">
+      <a href="https://www.facebook.com/anupOK11" target="_blank" id="facebookBtn">Owner's Facebook</a>
+    </div>
+  </div>
 
   <div id="overlay">
     <h2>Game Over</h2>
     <p id="finalScore"></p>
-    <button onclick="restart()">Restart</button><br>
-    <button id="fbBtn" onclick="window.open('https://www.facebook.com/anupOK11', '_blank')">Owner's Facebook</button>
+    <button onclick="restart()">Restart</button>
   </div>
 
   <script>
@@ -90,9 +116,8 @@
 
     let gridSize = 20;
     let tileCount = canvas.width / gridSize;
-    let snake, direction, nextDirection, food, score, lastTime;
-    let highScore = localStorage.getItem('highScore') || 0;
-    const speed = 160; // make slower here
+    let snake, direction, nextDirection, food, score, highScore = 0, lastTime;
+    const speed = 135;
 
     function initGame() {
       snake = [{ x: 10, y: 10 }];
@@ -100,12 +125,12 @@
       nextDirection = { x: 1, y: 0 };
       food = randomFood();
       score = 0;
-      updateScore();
+      updateScoreDisplay();
       lastTime = 0;
       overlay.style.display = 'none';
     }
 
-    function updateScore() {
+    function updateScoreDisplay() {
       scoreDisplay.innerText = `Score: ${score} | High Score: ${highScore}`;
     }
 
@@ -126,6 +151,7 @@
       }
     });
 
+    // Touch controls
     let startX = 0, startY = 0;
     canvas.addEventListener('touchstart', e => {
       const t = e.touches[0];
@@ -157,10 +183,8 @@
     }
 
     function gameOver() {
-      if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('highScore', highScore);
-      }
+      if (score > highScore) highScore = score;
+      updateScoreDisplay();
       finalScoreText.textContent = "Score: " + score + " 🐍";
       overlay.style.display = 'block';
     }
@@ -187,7 +211,7 @@
 
       if (head.x === food.x && head.y === food.y) {
         score++;
-        updateScore();
+        updateScoreDisplay();
         food = randomFood();
       } else {
         snake.pop();
@@ -197,6 +221,7 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // Snake
       snake.forEach((part) => {
         const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
         gradient.addColorStop(0, "#ff6666");
@@ -207,6 +232,7 @@
         ctx.fill();
       });
 
+      // Food
       ctx.fillStyle = "yellow";
       ctx.beginPath();
       ctx.arc(food.x * gridSize + gridSize / 2, food.y * gridSize + gridSize / 2, gridSize / 2.5, 0, Math.PI * 2);
@@ -214,7 +240,7 @@
     }
 
     function resizeCanvas() {
-      const size = Math.min(window.innerWidth, window.innerHeight) * 0.9;
+      const size = Math.min(window.innerWidth * 0.7, window.innerHeight * 0.7);
       canvas.width = canvas.height = Math.floor(size / gridSize) * gridSize;
       tileCount = canvas.width / gridSize;
     }
@@ -250,4 +276,3 @@
   </script>
 </body>
 </html>
-
