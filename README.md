@@ -12,9 +12,7 @@ _Made with ❤️ by Anup Raj Thapaliya_
 - 🕹️ Smooth touch and keyboard controls  
 - 🚀 Multiple difficulty levels: Easy, Medium, Hard  
 - 🎨 Color themes (Neon, Retro, Pastel)  
-- 🔊 Sound effects & background music  
 - 💯 High score tracking  
-- ⚡ Power-ups and animated background  
 - 📱 Mobile-first design  
 - 🧠 Rank titles based on score and difficulty  
 - 🔗 [My Facebook](https://www.facebook.com/anupOK11) link in-game  
