@@ -69,13 +69,13 @@
     <option value="pastel">Pastel</option>
   </select>
   <br><br>
-  <button id="startBtn">Start Game</button>
+  <button onclick="startGame()">Start Game</button>
 </div>
 
 <div id="overlay">
   <h2>🎉 Game Over</h2>
   <p id="finalScore"></p>
-  <button id="restartBtn">Restart</button>
+  <button onclick="restart()">Restart</button>
 </div>
 
 <script>
@@ -88,62 +88,43 @@ const startScreen = document.getElementById('startScreen');
 const difficultySelect = document.getElementById('difficultySelect');
 const themeSelect = document.getElementById('themeSelect');
 const musicToggleBtn = document.getElementById('musicToggle');
-const startBtn = document.getElementById('startBtn');
-const restartBtn = document.getElementById('restartBtn');
+
+// === Sprites ===
+const mangoImg = new Image(); mangoImg.src = "mango.png";
+const snakeBodyImg = new Image(); snakeBodyImg.src = "snake_body.png";
+
+let imagesReady = false;
+let imagesLoaded = 0;
+[mangoImg, snakeBodyImg].forEach(img => {
+  img.onload = () => { imagesLoaded++; if (imagesLoaded === 2) imagesReady = true; };
+});
 
 // === Sounds ===
 const bgMusic = new Audio('music.mp3'); bgMusic.loop = true; bgMusic.volume = 0.1;
 const gameOverSound = new Audio('gameover.mp3'); gameOverSound.volume = 0.9;
 const eatSound = new Audio('eat.mp3'); eatSound.volume = 0.8;
-const startSound = new Audio('start.mp3'); startSound.volume = 0.8;
-const restartSound = new Audio('restart.mp3'); restartSound.volume = 0.8;
+const startSound = new Audio('start.mp3');
+const restartSound = new Audio('restart.mp3');
 
 let musicEnabled = false;
-let userInteracted = false; // to unlock audio on first gesture (mobile browsers)
-
-// Unlock audio on first gesture
-function unlockAudio() {
-  if (userInteracted) return;
-  userInteracted = true;
-  // Attempt a silent play/pause to prime audio on iOS/Android
-  [bgMusic, gameOverSound, eatSound, startSound, restartSound].forEach(a => {
-    a.play().then(() => a.pause()).catch(()=>{});
-  });
-}
-['click','keydown','touchstart'].forEach(evt =>
-  document.addEventListener(evt, unlockAudio, { once: true })
-);
-
 musicToggleBtn.addEventListener('click', () => {
   musicEnabled = !musicEnabled;
   musicToggleBtn.textContent = `Music: ${musicEnabled ? 'On' : 'Off'}`;
-  if (musicEnabled && gameStarted) bgMusic.play().catch(() => {});
-  else {
-    bgMusic.pause();
-    bgMusic.currentTime = 0;
-  }
+  if (musicEnabled) bgMusic.play().catch(() => {});
+  else { bgMusic.pause(); bgMusic.currentTime = 0; }
 });
 
-startBtn.addEventListener('click', () => {
-  startBtn.disabled = true; // avoid double start
-  startSound.play().catch(() => {});
-  startGame();
-});
-
-restartBtn.addEventListener('click', () => {
-  restartSound.play().catch(() => {});
-  restart();
-});
-
-// === Game State ===
 const gridSize = 20;
 const tileCount = canvas.width / gridSize;
-let snake, direction, nextDirection, food, score, highScore = 0, lastTime = 0, speed;
-let gameStarted = false;
-let currentTheme = "neon";
+let snake, direction, nextDirection, food, score, highScore = 0, lastTime, speed;
+let gameStarted = false, currentTheme = "neon";
 
 function initGame() {
-  snake = [{ x: 10, y: 10 }];
+  snake = [
+  { x: 10, y: 10 },     // head
+  { x: 9, y: 10 }       // 1 body segment behind head, to left
+];
+
   direction = { x: 1, y: 0 };
   nextDirection = { x: 1, y: 0 };
   food = randomFood();
@@ -154,80 +135,198 @@ function initGame() {
 }
 
 function updateScore() {
-  scoreDisplay.innerText = `Score: ${score} | High Score: ${highScore}`;
+  scoreDisplay.innerHTML = `
+    Score: ${score} | High Score: ${highScore} 
+    <span id="aboutBox" style="
+      display: inline-block; 
+      margin-left: 12px; 
+      padding: 6px 16px; 
+      border: 2px solid #3399ff; 
+      border-radius: 12px; 
+      cursor: pointer; 
+      color: #66ccff; 
+      font-weight: 700;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      letter-spacing: 0.9px;
+      text-shadow: 0 0 10px #3399ff;
+      box-shadow: 0 0 18px #3399ff, inset 0 0 10px #3399ff;
+      user-select: none;
+      transition: all 0.4s ease;
+      font-size: 14px;
+      user-select: none;
+      ">
+      ABOUT ME&nbsp;😊
+    </span>
+  `;
+
+  const aboutBox = document.getElementById('aboutBox');
+  if (aboutBox && !aboutBox.dataset.listenersAdded) {
+    aboutBox.addEventListener('mouseenter', () => {
+      aboutBox.style.color = '#99ddff';
+      aboutBox.style.borderColor = '#99ddff';
+      aboutBox.style.textShadow = '0 0 18px #99ddff';
+      aboutBox.style.boxShadow = '0 0 28px #99ddff, inset 0 0 18px #99ddff';
+      aboutBox.style.animation = 'pulseGlow 1.5s infinite alternate ease-in-out';
+      aboutBox.style.transform = 'scale(1.05)';
+    });
+    aboutBox.addEventListener('mouseleave', () => {
+      aboutBox.style.color = '#66ccff';
+      aboutBox.style.borderColor = '#3399ff';
+      aboutBox.style.textShadow = '0 0 10px #3399ff';
+      aboutBox.style.boxShadow = '0 0 18px #3399ff, inset 0 0 10px #3399ff';
+      aboutBox.style.animation = 'none';
+      aboutBox.style.transform = 'scale(1)';
+    });
+    aboutBox.addEventListener('click', e => {
+      e.preventDefault();
+      openAboutWindow();
+    });
+    aboutBox.dataset.listenersAdded = "true";
+  }
 }
 
+// Add CSS keyframes for pulseGlow animation dynamically
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = `
+  @keyframes pulseGlow {
+    0% { box-shadow: 0 0 18px #99ddff, inset 0 0 18px #99ddff; }
+    100% { box-shadow: 0 0 35px #99ddff, inset 0 0 28px #99ddff; }
+  }
+`;
+document.head.appendChild(styleSheet);
+
+// Example openAboutWindow function (ensure your about.html is ready)
+function openAboutWindow() {
+  window.open(
+    'about.html',
+    'AboutMe',
+    'width=400,height=400,top=100,left=100,resizable=no,scrollbars=yes'
+  );
+}
+
+
+
+
+
+
 function startGame() {
-  speed = parseInt(difficultySelect.value, 10);
+  speed = parseInt(difficultySelect.value);
   currentTheme = themeSelect.value;
   gameStarted = true;
   startScreen.style.display = 'none';
+  try { startSound.currentTime = 0; startSound.play(); } catch (e) {}
   initGame();
   if (musicEnabled) bgMusic.play().catch(() => {});
   requestAnimationFrame(loop);
 }
 
+function openAboutWindow() {
+  const aboutContent = `
+    <html>
+      <head>
+        <title>About Developer & Game</title>
+        <style>
+          body { 
+            background: #121420; 
+            color: #d0d6f9; 
+            font-family: 'Segoe UI', sans-serif; 
+            padding: 20px; 
+          }
+          h2 { 
+            color: #00d8f9; 
+            margin-top: 0;
+          }
+          p, ul li { 
+            line-height: 1.5; 
+            font-weight: 500;
+          }
+          a { 
+            color: #1e90ff; 
+            text-decoration: none; 
+          }
+          ul {
+            padding-left: 20px;
+          }
+          li {
+            margin-bottom: 8px;
+            font-size: 15px;
+          }
+          /* Optional heart accent */
+          p:last-of-type {
+            color: #ff6f91;
+            font-weight: 600;
+            font-size: 16px;
+            margin-top: 20px;
+          }
+        </style>
+      </head>
+      <body>
+        <h2>About Developer</h2>
+        <p>Hi! I'm Anup Thapaliya, the creator of this Snake Game. I love gaming and coding.</p>
+        <h2>Game Features👇</h2>
+        <ul>
+          <li>🎯 Multiple difficulties: Easy, Medium, Hard</li>
+          <li>🎨 Cool neon, retro & pastel themes</li>
+          <li>🔊 Sound effects & background music toggle</li>
+          <li>🐍 Snake grows longer with each mango eaten</li>
+          <li>🏆 Rank system shown after game over</li>
+        </ul>
+        <p>Thanks for playing! ❤</p>
+      </body>
+    </html>
+  `;
+
+  const aboutWindow = window.open('', 'About', 'width=400,height=400,resizable=no');
+  aboutWindow.document.write(aboutContent);
+  aboutWindow.document.close();
+}
+
 function gameOver() {
-  try {
-    gameOverSound.currentTime = 0;
-    gameOverSound.play();
-  } catch (e) {}
+  try { gameOverSound.currentTime = 0; gameOverSound.play(); } catch (e) {}
+
   if (score > highScore) highScore = score;
-  finalScoreText.textContent = `Score: ${score} 🐍`;
+
+  // Determine rank based on score
+  let rank = "Beginner 🎮";
+  if (score >= 50) rank = "Ultra Pro💀";
+  else if (score >= 30) rank = "Pro🥶";
+  else if (score >= 20) rank = "Intermediate😤";
+  else if (score >= 10) rank = "Beginner😊";
+  else if (score >= 5)  rank = "Ultra Noob🤦‍♂️";
+
+  finalScoreText.textContent = `Score: ${score} 🐍 | Rank: ${rank}`;
   overlay.style.display = 'block';
-  gameStarted = false;
-  // stop music at game over (optional preference)
-  if (musicEnabled) { bgMusic.pause(); }
 }
 
 function restart() {
-  // FIX: make sure loop runs again
+  try { restartSound.currentTime = 0; restartSound.play(); } catch (e) {}
   initGame();
-  gameStarted = true;
-  overlay.style.display = 'none';
-  if (musicEnabled) {
-    bgMusic.currentTime = 0;
-    bgMusic.play().catch(() => {});
-  }
   requestAnimationFrame(loop);
 }
 
-// Controls - prevent reverse instantly
 document.addEventListener('keydown', e => {
-  if (!gameStarted) return;
   switch (e.key) {
-    case 'ArrowUp':
-    case 'w':
-    case 'W':
+    case 'ArrowUp': case 'w':
       if (direction.y === 0) nextDirection = { x: 0, y: -1 };
       break;
-    case 'ArrowDown':
-    case 's':
-    case 'S':
+    case 'ArrowDown': case 's':
       if (direction.y === 0) nextDirection = { x: 0, y: 1 };
       break;
-    case 'ArrowLeft':
-    case 'a':
-    case 'A':
+    case 'ArrowLeft': case 'a':
       if (direction.x === 0) nextDirection = { x: -1, y: 0 };
       break;
-    case 'ArrowRight':
-    case 'd':
-    case 'D':
+    case 'ArrowRight': case 'd':
       if (direction.x === 0) nextDirection = { x: 1, y: 0 };
       break;
   }
 });
 
-// Touch controls
 let startX = 0, startY = 0;
 document.addEventListener('touchstart', e => {
-  const t = e.touches[0];
-  startX = t.clientX;
-  startY = t.clientY;
-}, {passive:true});
+  const t = e.touches[0]; startX = t.clientX; startY = t.clientY;
+});
 document.addEventListener('touchend', e => {
-  if (!gameStarted) return;
   const dx = e.changedTouches[0].clientX - startX;
   const dy = e.changedTouches[0].clientY - startY;
   if (Math.abs(dx) > Math.abs(dy)) {
@@ -237,9 +336,8 @@ document.addEventListener('touchend', e => {
     if (dy > 10 && direction.y === 0) nextDirection = { x: 0, y: 1 };
     else if (dy < -10 && direction.y === 0) nextDirection = { x: 0, y: -1 };
   }
-}, {passive:true});
+});
 
-// Game logic functions
 function randomFood() {
   let f;
   do {
@@ -253,14 +351,8 @@ function update() {
 
   const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
 
-  // Check collision with wall or self
-  if (
-    head.x < 0 ||
-    head.x >= tileCount ||
-    head.y < 0 ||
-    head.y >= tileCount ||
-    snake.some(s => s.x === head.x && s.y === head.y)
-  ) {
+  if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount ||
+    snake.some(s => s.x === head.x && s.y === head.y)) {
     gameOver();
     return;
   }
@@ -269,10 +361,7 @@ function update() {
 
   if (head.x === food.x && head.y === food.y) {
     score++;
-    try {
-      eatSound.currentTime = 0;
-      eatSound.play();
-    } catch (e) {}
+    try { eatSound.currentTime = 0; eatSound.play(); } catch (e) {}
     updateScore();
     food = randomFood();
   } else {
@@ -283,70 +372,85 @@ function update() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Optional thematic background tweaks
-  if (currentTheme === 'retro') {
-    // subtle scanlines
-    ctx.save();
-    ctx.globalAlpha = 0.04;
-    for (let y = 0; y < canvas.height; y += 4) {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, y, canvas.width, 1);
-    }
-    ctx.restore();
-  } else if (currentTheme === 'pastel') {
-    ctx.save();
-    const grad = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-    grad.addColorStop(0, '#ffd1d1');
-    grad.addColorStop(1, '#d1ffd9');
-    ctx.globalAlpha = 0.15;
-    ctx.fillStyle = grad;
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.restore();
+  if (imagesReady) drawSnakeWithImages();
+  else drawSnakeFallback();
+
+  if (imagesReady) {
+    ctx.drawImage(mangoImg, food.x * gridSize - 1.5, food.y * gridSize - 1.5, gridSize + 3, gridSize + 3);
+  } else {
+    ctx.fillStyle = "#ffff00";
+    ctx.beginPath();
+    ctx.arc(food.x * gridSize + gridSize / 2, food.y * gridSize + gridSize / 2, gridSize / 2.5, 0, Math.PI * 2);
+    ctx.fill();
   }
-  // Draw snake as green circle (head smaller, body bigger)
+}
+
+function drawSnakeFallback() {
+  snake.forEach(part => {
+    ctx.fillStyle = getSnakeColor();
+    ctx.beginPath();
+    ctx.roundRect(part.x * gridSize, part.y * gridSize, gridSize - 1, gridSize - 1, 5);
+    ctx.fill();
+  });
+}
+
+function drawRotatedImage(img, x, y, angleRad, size) {
+  const px = x * gridSize + gridSize / 2;
+  const py = y * gridSize + gridSize / 2;
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.rotate(angleRad);
+  ctx.drawImage(img, -size / 2, -size / 2, size, size);
+  ctx.restore();
+}
+
+function angleFromVector(dx, dy) {
+  return Math.atan2(dy, dx);
+}
+
+function drawSnakeWithImages() {
   for (let i = 0; i < snake.length; i++) {
     const seg = snake[i];
-    const x = seg.x * gridSize + gridSize / 2;
-    const y = seg.y * gridSize + gridSize / 2;
-
     if (i === 0) {
-      // head: smaller green circle with a small dot inside
-      ctx.fillStyle = '#00ff00';
+      const centerX = seg.x * gridSize + gridSize / 2;
+      const centerY = seg.y * gridSize + gridSize / 2;
+      const headRadius = (gridSize - 7) / 2;
+
+      ctx.save();
+      ctx.fillStyle = "#00FF00";
+      ctx.shadowColor = "#0f0";
+      ctx.shadowBlur = 10;
       ctx.beginPath();
-      ctx.arc(x, y, gridSize * 0.4, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, headRadius, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = '#003300';
+      ctx.fillStyle = "#004400";
+      const dotRadius = headRadius / 4;
       ctx.beginPath();
-      ctx.arc(x + gridSize * 0.12, y - gridSize * 0.1, gridSize * 0.1, 0, Math.PI * 2);
+      ctx.arc(centerX + headRadius / 2, centerY, dotRadius, 0, Math.PI * 2);
       ctx.fill();
+
+      ctx.restore();
     } else {
-      // body: slightly bigger circle
-      ctx.fillStyle = '#00cc00';
-      ctx.beginPath();
-      ctx.arc(x, y, gridSize * 0.45, 0, Math.PI * 2);
-      ctx.fill();
+      const dx = snake[i - 1].x - seg.x;
+      const dy = snake[i - 1].y - seg.y;
+      const angle = angleFromVector(dx, dy);
+      drawRotatedImage(snakeBodyImg, seg.x, seg.y, angle, gridSize + 3);
     }
   }
+}
 
-  // Draw glowing mango food
-  const fx = food.x * gridSize + gridSize / 2;
-  const fy = food.y * gridSize + gridSize / 2;
-
-  // glow effect
-  const gradient = ctx.createRadialGradient(fx, fy, gridSize * 0.1, fx, fy, gridSize * 0.45);
-  gradient.addColorStop(0, '#ffff66');
-  gradient.addColorStop(1, 'rgba(255, 255, 102, 0)');
-  ctx.fillStyle = gradient;
-  ctx.beginPath();
-  ctx.arc(fx, fy, gridSize * 0.5, 0, Math.PI * 2);
-  ctx.fill();
-
-  // mango circle
-  ctx.fillStyle = '#ffff00';
-  ctx.beginPath();
-  ctx.arc(fx, fy, gridSize * 0.35, 0, Math.PI * 2);
-  ctx.fill();
+function getSnakeColor() {
+  switch (currentTheme) {
+    case 'retro': return '#00FF00';
+    case 'pastel': return '#ff99cc';
+    case 'neon':
+    default:
+      const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      g.addColorStop(0, "#ff66ff");
+      g.addColorStop(1, "#ff3333");
+      return g;
+  }
 }
 
 function loop(timestamp) {
@@ -358,6 +462,21 @@ function loop(timestamp) {
   }
   requestAnimationFrame(loop);
 }
+
+CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+  this.beginPath();
+  this.moveTo(x + r, y);
+  this.lineTo(x + w - r, y);
+  this.quadraticCurveTo(x + w, y, x + w, y + r);
+  this.lineTo(x + w, y + h - r);
+  this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  this.lineTo(x + r, y + h);
+  this.quadraticCurveTo(x, y + h, x, y + h - r);
+  this.lineTo(x, y + r);
+  this.quadraticCurveTo(x, y, x + r, y);
+  this.closePath();
+  this.fill();
+};
 </script>
 </body>
 </html>
