@@ -1,155 +1,265 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Neon Snake Game</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: black;
-      color: white;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    canvas {
-      background-color: #111;
-      box-shadow: 0 0 40px #0ff;
-    }
-    .overlay {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.8);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 2;
-    }
-    .overlay button {
-      padding: 10px 20px;
-      margin: 10px;
-      font-size: 1.2em;
-      border: none;
-      border-radius: 8px;
-      background: #0ff;
-      color: #000;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .overlay button:hover {
-      background: #0cf;
-    }
-    #scoreDisplay {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      font-size: 1.5em;
-      color: #0ff;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Snake Game - Made by Anup</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; background: #140000; color: #fff;
+    font-family: 'Segoe UI', sans-serif; height: 100%;
+    overflow: hidden; display: flex; flex-direction: column; align-items: center; touch-action: none;
+  }
+  h1 { color: #ff3333; font-size: 22px; margin-top: 50px; text-shadow: 0 0 6px #ff3333; text-align: center; }
+  #scoreDisplay { font-size: 16px; margin-bottom: 5px; }
+  #canvasContainer {
+    width: 90vmin; height: 90vmin; max-width: 420px; max-height: 420px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  canvas {
+    width: 100%; height: 100%; background: radial-gradient(#330000, #000000);
+    border: 5px solid #ff3333; border-radius: 12px;
+    box-shadow: 0 0 30px #ff3333, 0 0 10px #ff3333 inset; image-rendering: pixelated;
+  }
+  #overlay, #startScreen {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.85); color: #fff; padding: 25px; border: 2px solid #ff3333;
+    border-radius: 10px; text-align: center; z-index: 2;
+  }
+  #overlay { display: none; }
+  button {
+    margin-top: 10px; padding: 10px 18px; background: #ff3333; border: none; color: #fff;
+    font-weight: bold; border-radius: 6px; cursor: pointer;
+  }
+  select { margin-top: 10px; padding: 6px; border-radius: 5px; border: none; font-size: 16px; }
+  .toggle { background: #222; border: 1px solid #ff3333; }
+  .music-btn-container { margin-top: 8px; }
+  .fb-link {
+    position: absolute; top: 10px; left: 10px; background: #3b5998; color: white;
+    padding: 8px 12px; border-radius: 5px; font-weight: bold; text-decoration: none; z-index: 3; box-shadow: 0 0 5px #000;
+  }
+</style>
 </head>
 <body>
+<a class="fb-link" href="https://www.facebook.com/anupOK11" target="_blank">My Facebook 😎</a>
 
-<canvas id="gameCanvas" width="600" height="600"></canvas>
+<h1>🐍 Snake Game - Made by Anup</h1>
+<div id="scoreDisplay">Score: 0 | High Score: 0</div>
 
-<div class="overlay" id="overlay">
-  <h1>🔥 Anup welcomes you to the game 🔥</h1>
+<div id="canvasContainer">
+  <canvas id="game" width="400" height="400"></canvas>
+</div>
+
+<div class="music-btn-container">
+  <button id="musicToggle" class="toggle">Music: Off</button>
+</div>
+
+<div id="startScreen">
+  <h2>🎮 Welcome to Snake Game!</h2>
+  <p>Select Difficulty:</p>
+  <select id="difficultySelect">
+    <option value="180">Easy</option>
+    <option value="135" selected>Medium</option>
+    <option value="90">Hard</option>
+  </select>
+  <p>Select Theme:</p>
+  <select id="themeSelect">
+    <option value="retro">Retro</option>
+    <option value="neon" selected>Neon</option>
+    <option value="pastel">Pastel</option>
+  </select>
+  <br><br>
   <button id="startBtn">Start Game</button>
 </div>
 
-<div class="overlay" id="gameOverScreen" style="display:none;">
-  <h2>Game Over</h2>
-  <p id="finalScoreText">Score: 0</p>
+<div id="overlay">
+  <h2>🎉 Game Over</h2>
+  <p id="finalScore"></p>
   <button id="restartBtn">Restart</button>
 </div>
 
-<div id="scoreDisplay">Score: 0</div>
-
-<!-- Audio files -->
-<audio id="startSound" src="start.mp3" preload="auto"></audio>
-<audio id="restartSound" src="restart.mp3" preload="auto"></audio>
-<audio id="eatSound" src="eat.mp3" preload="auto"></audio>
-<audio id="gameOverSound" src="gameover.mp3" preload="auto"></audio>
-<audio id="bgMusic" src="music.mp3" loop preload="auto"></audio>
-
 <script>
-const canvas = document.getElementById('gameCanvas');
+const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+const scoreDisplay = document.getElementById('scoreDisplay');
+const overlay = document.getElementById('overlay');
+const finalScoreText = document.getElementById('finalScore');
+const startScreen = document.getElementById('startScreen');
+const difficultySelect = document.getElementById('difficultySelect');
+const themeSelect = document.getElementById('themeSelect');
+const musicToggleBtn = document.getElementById('musicToggle');
+const startBtn = document.getElementById('startBtn');
+const restartBtn = document.getElementById('restartBtn');
 
+// === Sounds ===
+const bgMusic = new Audio('music.mp3'); bgMusic.loop = true; bgMusic.volume = 0.1;
+const gameOverSound = new Audio('gameover.mp3'); gameOverSound.volume = 0.9;
+const eatSound = new Audio('eat.mp3'); eatSound.volume = 0.8;
+const startSound = new Audio('start.mp3'); startSound.volume = 0.8;
+const restartSound = new Audio('restart.mp3'); restartSound.volume = 0.8;
+
+let musicEnabled = false;
+let userInteracted = false; // to unlock audio on first gesture (mobile browsers)
+
+// Unlock audio on first gesture
+function unlockAudio() {
+  if (userInteracted) return;
+  userInteracted = true;
+  // Attempt a silent play/pause to prime audio on iOS/Android
+  [bgMusic, gameOverSound, eatSound, startSound, restartSound].forEach(a => {
+    a.play().then(() => a.pause()).catch(()=>{});
+  });
+}
+['click','keydown','touchstart'].forEach(evt =>
+  document.addEventListener(evt, unlockAudio, { once: true })
+);
+
+musicToggleBtn.addEventListener('click', () => {
+  musicEnabled = !musicEnabled;
+  musicToggleBtn.textContent = `Music: ${musicEnabled ? 'On' : 'Off'}`;
+  if (musicEnabled && gameStarted) bgMusic.play().catch(() => {});
+  else {
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
+  }
+});
+
+startBtn.addEventListener('click', () => {
+  startBtn.disabled = true; // avoid double start
+  startSound.play().catch(() => {});
+  startGame();
+});
+
+restartBtn.addEventListener('click', () => {
+  restartSound.play().catch(() => {});
+  restart();
+});
+
+// === Game State ===
 const gridSize = 20;
 const tileCount = canvas.width / gridSize;
+let snake, direction, nextDirection, food, score, highScore = 0, lastTime = 0, speed;
+let gameStarted = false;
+let currentTheme = "neon";
 
-let snake = [
-  { x: 10, y: 10 },
-  { x: 9, y: 10 }
-];
-let direction = { x: 1, y: 0 };
-let nextDirection = { x: 1, y: 0 };
-let food = randomFood();
-let score = 0;
-let lastTime = 0;
-let overlay = document.getElementById("overlay");
-let startBtn = document.getElementById("startBtn");
-let restartBtn = document.getElementById("restartBtn");
-let gameOverScreen = document.getElementById("gameOverScreen");
-let finalScoreText = document.getElementById("finalScoreText");
-let scoreDisplay = document.getElementById("scoreDisplay");
-
-const startSound = document.getElementById("startSound");
-const restartSound = document.getElementById("restartSound");
-const eatSound = document.getElementById("eatSound");
-const gameOverSound = document.getElementById("gameOverSound");
-const bgMusic = document.getElementById("bgMusic");
-
-const bodyImg = new Image();
-bodyImg.src = "snake_body.png";
-
-const mangoImg = new Image();
-mangoImg.src = "mango.png";
-
-function randomFood() {
-  return {
-    x: Math.floor(Math.random() * tileCount),
-    y: Math.floor(Math.random() * tileCount)
-  };
+function initGame() {
+  snake = [{ x: 10, y: 10 }];
+  direction = { x: 1, y: 0 };
+  nextDirection = { x: 1, y: 0 };
+  food = randomFood();
+  score = 0;
+  lastTime = 0;
+  overlay.style.display = 'none';
+  updateScore();
 }
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+function updateScore() {
+  scoreDisplay.innerText = `Score: ${score} | High Score: ${highScore}`;
+}
 
-  // Draw food
-  ctx.drawImage(mangoImg, food.x * gridSize, food.y * gridSize, gridSize, gridSize);
+function startGame() {
+  speed = parseInt(difficultySelect.value, 10);
+  currentTheme = themeSelect.value;
+  gameStarted = true;
+  startScreen.style.display = 'none';
+  initGame();
+  if (musicEnabled) bgMusic.play().catch(() => {});
+  requestAnimationFrame(loop);
+}
 
-  // Draw snake
-  snake.forEach((segment, index) => {
-    let sx = segment.x * gridSize;
-    let sy = segment.y * gridSize;
-    if (index === 0) {
-      ctx.fillStyle = '#0ff';
-      ctx.beginPath();
-      ctx.arc(sx + gridSize/2, sy + gridSize/2, gridSize * 0.35, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      ctx.drawImage(bodyImg, sx, sy, gridSize, gridSize);
-    }
-  });
+function gameOver() {
+  try {
+    gameOverSound.currentTime = 0;
+    gameOverSound.play();
+  } catch (e) {}
+  if (score > highScore) highScore = score;
+  finalScoreText.textContent = `Score: ${score} 🐍`;
+  overlay.style.display = 'block';
+  gameStarted = false;
+  // stop music at game over (optional preference)
+  if (musicEnabled) { bgMusic.pause(); }
+}
 
-  // Move
+function restart() {
+  // FIX: make sure loop runs again
+  initGame();
+  gameStarted = true;
+  overlay.style.display = 'none';
+  if (musicEnabled) {
+    bgMusic.currentTime = 0;
+    bgMusic.play().catch(() => {});
+  }
+  requestAnimationFrame(loop);
+}
+
+// Controls - prevent reverse instantly
+document.addEventListener('keydown', e => {
+  if (!gameStarted) return;
+  switch (e.key) {
+    case 'ArrowUp':
+    case 'w':
+    case 'W':
+      if (direction.y === 0) nextDirection = { x: 0, y: -1 };
+      break;
+    case 'ArrowDown':
+    case 's':
+    case 'S':
+      if (direction.y === 0) nextDirection = { x: 0, y: 1 };
+      break;
+    case 'ArrowLeft':
+    case 'a':
+    case 'A':
+      if (direction.x === 0) nextDirection = { x: -1, y: 0 };
+      break;
+    case 'ArrowRight':
+    case 'd':
+    case 'D':
+      if (direction.x === 0) nextDirection = { x: 1, y: 0 };
+      break;
+  }
+});
+
+// Touch controls
+let startX = 0, startY = 0;
+document.addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  startX = t.clientX;
+  startY = t.clientY;
+}, {passive:true});
+document.addEventListener('touchend', e => {
+  if (!gameStarted) return;
+  const dx = e.changedTouches[0].clientX - startX;
+  const dy = e.changedTouches[0].clientY - startY;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 10 && direction.x === 0) nextDirection = { x: 1, y: 0 };
+    else if (dx < -10 && direction.x === 0) nextDirection = { x: -1, y: 0 };
+  } else {
+    if (dy > 10 && direction.y === 0) nextDirection = { x: 0, y: 1 };
+    else if (dy < -10 && direction.y === 0) nextDirection = { x: 0, y: -1 };
+  }
+}, {passive:true});
+
+// Game logic functions
+function randomFood() {
+  let f;
+  do {
+    f = { x: Math.floor(Math.random() * tileCount), y: Math.floor(Math.random() * tileCount) };
+  } while (snake.some(s => s.x === f.x && s.y === f.y));
+  return f;
+}
+
+function update() {
   direction = nextDirection;
-  const head = {
-    x: snake[0].x + direction.x,
-    y: snake[0].y + direction.y
-  };
 
-  // Wall or self hit
+  const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+  // Check collision with wall or self
   if (
-    head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount ||
-    snake.some((s, i) => i > 0 && s.x === head.x && s.y === head.y)
+    head.x < 0 ||
+    head.x >= tileCount ||
+    head.y < 0 ||
+    head.y >= tileCount ||
+    snake.some(s => s.x === head.x && s.y === head.y)
   ) {
     gameOver();
     return;
@@ -158,8 +268,11 @@ function draw() {
   snake.unshift(head);
 
   if (head.x === food.x && head.y === food.y) {
-    eatSound.play();
     score++;
+    try {
+      eatSound.currentTime = 0;
+      eatSound.play();
+    } catch (e) {}
     updateScore();
     food = randomFood();
   } else {
@@ -167,81 +280,84 @@ function draw() {
   }
 }
 
-function updateScore() {
-  scoreDisplay.textContent = "Score: " + score;
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Optional thematic background tweaks
+  if (currentTheme === 'retro') {
+    // subtle scanlines
+    ctx.save();
+    ctx.globalAlpha = 0.04;
+    for (let y = 0; y < canvas.height; y += 4) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, y, canvas.width, 1);
+    }
+    ctx.restore();
+  } else if (currentTheme === 'pastel') {
+    ctx.save();
+    const grad = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+    grad.addColorStop(0, '#ffd1d1');
+    grad.addColorStop(1, '#d1ffd9');
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.restore();
+  }
+  // Draw snake as green circle (head smaller, body bigger)
+  for (let i = 0; i < snake.length; i++) {
+    const seg = snake[i];
+    const x = seg.x * gridSize + gridSize / 2;
+    const y = seg.y * gridSize + gridSize / 2;
+
+    if (i === 0) {
+      // head: smaller green circle with a small dot inside
+      ctx.fillStyle = '#00ff00';
+      ctx.beginPath();
+      ctx.arc(x, y, gridSize * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#003300';
+      ctx.beginPath();
+      ctx.arc(x + gridSize * 0.12, y - gridSize * 0.1, gridSize * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // body: slightly bigger circle
+      ctx.fillStyle = '#00cc00';
+      ctx.beginPath();
+      ctx.arc(x, y, gridSize * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Draw glowing mango food
+  const fx = food.x * gridSize + gridSize / 2;
+  const fy = food.y * gridSize + gridSize / 2;
+
+  // glow effect
+  const gradient = ctx.createRadialGradient(fx, fy, gridSize * 0.1, fx, fy, gridSize * 0.45);
+  gradient.addColorStop(0, '#ffff66');
+  gradient.addColorStop(1, 'rgba(255, 255, 102, 0)');
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(fx, fy, gridSize * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // mango circle
+  ctx.fillStyle = '#ffff00';
+  ctx.beginPath();
+  ctx.arc(fx, fy, gridSize * 0.35, 0, Math.PI * 2);
+  ctx.fill();
 }
 
-function gameOver() {
-  gameOverSound.play();
-  bgMusic.pause();
-  gameOverScreen.style.display = "flex";
-  finalScoreText.textContent = `Score: ${score} 🐍 | Rank: ${getRank(score)}`;
-  cancelAnimationFrame(gameLoopId);
-}
-
-function getRank(score) {
-  if (score >= 30) return "🔥 Legend";
-  if (score >= 20) return "😎 Pro";
-  if (score >= 10) return "🙂 Intermediate";
-  if (score >= 5) return "🫠 Newbie";
-  return "👶 Baby Snake";
-}
-
-function gameLoop(timestamp) {
-  if (timestamp - lastTime > 100) {
+function loop(timestamp) {
+  if (!gameStarted || overlay.style.display === 'block') return;
+  if (timestamp - lastTime > speed) {
+    update();
     draw();
     lastTime = timestamp;
   }
-  gameLoopId = requestAnimationFrame(gameLoop);
+  requestAnimationFrame(loop);
 }
-
-function initGame() {
-  snake = [
-    { x: 10, y: 10 },
-    { x: 9, y: 10 }
-  ];
-  direction = { x: 1, y: 0 };
-  nextDirection = { x: 1, y: 0 };
-  food = randomFood();
-  score = 0;
-  lastTime = 0;
-  overlay.style.display = 'none';
-  gameOverScreen.style.display = 'none';
-  updateScore();
-  bgMusic.currentTime = 0;
-  bgMusic.play();
-  requestAnimationFrame(gameLoop);
-}
-
-startBtn.addEventListener('click', () => {
-  startSound.currentTime = 0;
-  startSound.play().then(() => {
-    setTimeout(() => initGame(), 200); // slight delay so sound plays first
-  }).catch(() => initGame());
-});
-
-restartBtn.addEventListener('click', () => {
-  restartSound.currentTime = 0;
-  restartSound.play().then(() => {
-    setTimeout(() => initGame(), 200);
-  }).catch(() => initGame());
-});
-
-document.addEventListener("keydown", e => {
-  const dirs = {
-    ArrowUp: { x: 0, y: -1 },
-    ArrowDown: { x: 0, y: 1 },
-    ArrowLeft: { x: -1, y: 0 },
-    ArrowRight: { x: 1, y: 0 }
-  };
-  if (dirs[e.key]) {
-    const newDir = dirs[e.key];
-    if (!(newDir.x === -direction.x && newDir.y === -direction.y)) {
-      nextDirection = newDir;
-    }
-  }
-});
 </script>
-
 </body>
 </html>
